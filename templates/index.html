@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LeadFlow — Client Lead Management</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:           #0F172A;
+      --card-bg:      #1E293B;
+      --card-bg-alt:  #162032;
+      --primary:      #3B82F6;
+      --primary-dark: #2563EB;
+      --primary-glow: rgba(59,130,246,0.18);
+      --text:         #E2E8F0;
+      --text-muted:   #94A3B8;
+      --text-dim:     #64748B;
+      --border:       #334155;
+      --border-light: #253044;
+      --green:        #22C55E;
+      --green-dim:    rgba(34,197,94,0.15);
+      --amber:        #F59E0B;
+      --amber-dim:    rgba(245,158,11,0.15);
+      --red:          #EF4444;
+      --red-dim:      rgba(239,68,68,0.15);
+      --shadow-sm:    0 1px 3px rgba(0,0,0,0.4);
+      --shadow-md:    0 4px 16px rgba(0,0,0,0.5);
+      --shadow-blue:  0 4px 20px rgba(59,130,246,0.25);
+      --sidebar-w:    240px;
+      --radius:       12px;
+      --radius-sm:    8px;
+      --radius-xs:    6px;
+      --font:         'Inter', sans-serif;
+      --t:            0.2s ease;
+    }
+
+    body { font-family:var(--font); background:var(--bg); color:var(--text); display:flex; min-height:100vh; overflow-x:hidden; font-size:14px; line-height:1.6; }
+
+    ::-webkit-scrollbar { width:6px; height:6px; }
+    ::-webkit-scrollbar-track { background:var(--card-bg); }
+    ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+    ::-webkit-scrollbar-thumb:hover { background:var(--primary); }
+
+    /* SIDEBAR */
+    .sidebar { width:var(--sidebar-w); background:var(--card-bg); border-right:1px solid var(--border); min-height:100vh; display:flex; flex-direction:column; padding:24px 14px; position:fixed; top:0; left:0; bottom:0; z-index:100; transition:transform var(--t); }
+    .sidebar-brand { display:flex; align-items:center; gap:10px; padding:0 8px 24px; border-bottom:1px solid var(--border); margin-bottom:20px; }
+    .brand-icon { font-size:22px; color:var(--primary); filter:drop-shadow(0 0 6px rgba(59,130,246,.5)); }
+    .brand-name { font-size:18px; font-weight:700; color:var(--text); letter-spacing:-.3px; }
+    .sidebar-nav { display:flex; flex-direction:column; gap:3px; flex:1; }
+    .nav-item { display:flex; align-items:center; gap:10px; padding:10px 13px; border-radius:var(--radius-sm); color:var(--text-muted); text-decoration:none; font-size:13.5px; font-weight:500; transition:background var(--t),color var(--t); }
+    .nav-item:hover { background:var(--primary-glow); color:var(--text); }
+    .nav-item.active { background:var(--primary); color:#fff; box-shadow:var(--shadow-blue); }
+    .nav-icon { font-size:15px; opacity:.85; }
+    .sidebar-footer { display:flex; align-items:center; gap:10px; padding:12px 13px; background:var(--card-bg-alt); border:1px solid var(--border); border-radius:var(--radius-sm); margin-top:16px; }
+    .user-avatar { width:32px; height:32px; border-radius:50%; background:var(--primary); color:#fff; font-weight:700; font-size:13px; display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow:var(--shadow-blue); }
+    .user-name { font-size:13px; font-weight:600; color:var(--text); }
+    .user-role { font-size:11px; color:var(--text-dim); }
+
+    /* MAIN */
+    .main { margin-left:var(--sidebar-w); flex:1; padding:28px 32px; min-width:0; }
+
+    /* TOPBAR */
+    .topbar { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:28px; gap:16px; flex-wrap:wrap; }
+    .topbar-left { display:flex; align-items:flex-start; gap:14px; }
+    .hamburger { display:none; background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius-xs); font-size:18px; cursor:pointer; color:var(--text-muted); padding:6px 10px; margin-top:4px; transition:color var(--t),border-color var(--t); }
+    .hamburger:hover { color:var(--text); border-color:var(--primary); }
+    .page-title { font-size:22px; font-weight:700; color:var(--text); letter-spacing:-.4px; line-height:1.2; }
+    .page-sub { font-size:13px; color:var(--text-dim); margin-top:3px; }
+    .topbar-right { display:flex; gap:10px; }
+    .stat-pill { background:var(--card-bg); border:1px solid var(--border); border-radius:999px; padding:7px 16px; display:flex; align-items:center; gap:8px; white-space:nowrap; transition:border-color var(--t); }
+    .stat-pill:hover { border-color:var(--primary); }
+    .stat-pill.converted { border-color:rgba(34,197,94,.4); }
+    .stat-pill.converted:hover { border-color:var(--green); }
+    .pill-label { font-size:11px; font-weight:600; color:var(--text-dim); text-transform:uppercase; letter-spacing:.5px; }
+    .pill-value { font-size:17px; font-weight:700; color:var(--primary); }
+    .stat-pill.converted .pill-value { color:var(--green); }
+
+    /* CONNECTION BANNER */
+    .conn-banner { display:none; align-items:center; gap:10px; margin-bottom:18px; padding:11px 18px; border-radius:var(--radius-sm); font-size:13px; font-weight:500; border:1px solid; }
+    .conn-banner.error { display:flex; background:var(--red-dim); border-color:rgba(239,68,68,.4); color:#fca5a5; }
+    .conn-banner.ok    { display:flex; background:var(--green-dim); border-color:rgba(34,197,94,.4); color:#86efac; }
+    .conn-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+    .conn-banner.error .conn-dot { background:var(--red); }
+    .conn-banner.ok .conn-dot { background:var(--green); }
+
+    /* STATS */
+    .stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:24px; }
+    .stat-card { background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius); padding:22px 24px; box-shadow:var(--shadow-sm); transition:border-color var(--t),transform var(--t),box-shadow var(--t); }
+    .stat-card:hover { border-color:var(--primary); transform:translateY(-2px); box-shadow:var(--shadow-md); }
+    .stat-label { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.7px; color:var(--text-dim); margin-bottom:8px; }
+    .stat-number { font-size:38px; font-weight:700; color:var(--text); line-height:1; margin-bottom:14px; letter-spacing:-1px; }
+    .stat-bar { height:4px; background:var(--border); border-radius:2px; overflow:hidden; }
+    .stat-fill { height:100%; border-radius:2px; width:0%; transition:width .55s ease; }
+    .new-fill       { background:var(--primary); box-shadow:0 0 8px rgba(59,130,246,.4); }
+    .contacted-fill { background:var(--amber);   box-shadow:0 0 8px rgba(245,158,11,.4); }
+    .converted-fill { background:var(--green);   box-shadow:0 0 8px rgba(34,197,94,.4);  }
+
+    /* CARD */
+    .card { background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow-sm); margin-bottom:20px; overflow:hidden; }
+    .card-header { display:flex; align-items:center; justify-content:space-between; padding:18px 24px; border-bottom:1px solid var(--border); }
+    .card-title { font-size:15px; font-weight:600; color:var(--text); }
+    .card-badge { background:var(--primary-glow); color:var(--primary); border:1px solid rgba(59,130,246,.3); font-size:12px; font-weight:600; padding:4px 12px; border-radius:999px; }
+    .lead-count-badge { background:var(--card-bg-alt); border:1px solid var(--border); color:var(--text-muted); font-size:12px; font-weight:500; padding:4px 12px; border-radius:999px; }
+
+    /* FORM */
+    .form-card { padding-bottom:20px; }
+    .form-grid { display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:16px; padding:20px 24px 0; align-items:end; }
+    .form-group { display:flex; flex-direction:column; gap:7px; }
+    label { font-size:11.5px; font-weight:600; color:var(--text-dim); text-transform:uppercase; letter-spacing:.5px; }
+    input[type="text"], input[type="email"] { padding:10px 14px; background:var(--bg); border:1.5px solid var(--border); border-radius:var(--radius-sm); font-family:var(--font); font-size:13.5px; color:var(--text); outline:none; transition:border-color var(--t),box-shadow var(--t); }
+    input[type="text"]:hover, input[type="email"]:hover { border-color:#475569; }
+    input[type="text"]:focus, input[type="email"]:focus { border-color:var(--primary); box-shadow:0 0 0 3px var(--primary-glow); }
+    input::placeholder { color:var(--text-dim); }
+    .btn-add { padding:10px 22px; background:var(--primary); color:#fff; border:none; border-radius:var(--radius-sm); font-family:var(--font); font-size:13.5px; font-weight:600; cursor:pointer; white-space:nowrap; transition:background var(--t),transform var(--t),box-shadow var(--t); box-shadow:var(--shadow-blue); }
+    .btn-add:hover { background:var(--primary-dark); transform:translateY(-1px); box-shadow:0 6px 22px rgba(59,130,246,.4); }
+    .btn-add:active { transform:translateY(0); }
+    .form-error { color:var(--red); font-size:12.5px; padding:8px 24px 0; min-height:24px; }
+
+    /* SEARCH */
+    .search-wrap { margin-bottom:20px; }
+    .search-wrap input { width:100%; padding:12px 18px; border-radius:var(--radius); font-size:13.5px; background:var(--card-bg); box-shadow:var(--shadow-sm); }
+
+    /* LOADING */
+    .loading-state { display:flex; flex-direction:column; align-items:center; padding:56px 24px; gap:14px; color:var(--text-dim); font-size:13px; }
+    .spinner { width:28px; height:28px; border:3px solid var(--border); border-top-color:var(--primary); border-radius:50%; animation:spin .7s linear infinite; }
+
+    /* EMPTY */
+    .empty-state { display:flex; flex-direction:column; align-items:center; padding:60px 24px; text-align:center; }
+    .empty-icon { font-size:48px; color:var(--border); margin-bottom:16px; }
+    .empty-state h3 { font-size:17px; font-weight:600; color:var(--text-muted); margin-bottom:8px; }
+    .empty-state p { font-size:13px; color:var(--text-dim); }
+
+    /* TABLE */
+    .table-wrap { overflow-x:auto; }
+    .leads-table { width:100%; border-collapse:collapse; font-size:13.5px; }
+    .leads-table thead tr { background:var(--card-bg-alt); border-bottom:1px solid var(--border); }
+    .leads-table th { padding:12px 16px; text-align:left; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.6px; color:var(--text-dim); white-space:nowrap; }
+    .leads-table td { padding:14px 16px; border-bottom:1px solid var(--border-light); vertical-align:middle; color:var(--text); }
+    .leads-table tbody tr { transition:background var(--t); animation:fadeSlideIn .22s ease both; }
+    .leads-table tbody tr:hover { background:rgba(59,130,246,0.06); }
+    .leads-table tbody tr:last-child td { border-bottom:none; }
+    .row-num { font-size:12px; color:var(--text-dim); font-weight:600; }
+    .lead-name-cell { display:flex; align-items:center; gap:10px; }
+    .lead-avatar { width:32px; height:32px; border-radius:50%; background:var(--primary-glow); color:var(--primary); border:1px solid rgba(59,130,246,.3); font-weight:700; font-size:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .lead-name { font-weight:600; color:var(--text); font-size:13.5px; }
+    .lead-email-sub { font-size:12px; color:var(--text-dim); margin-top:1px; }
+    .leads-table td:nth-child(3) { color:var(--text-muted); font-size:13px; }
+    .source-badge { display:inline-block; padding:3px 10px; background:var(--card-bg-alt); border:1px solid var(--border); color:var(--text-muted); border-radius:999px; font-size:12px; font-weight:500; }
+
+    /* STATUS SELECT */
+    .status-select { padding:6px 26px 6px 10px; border-radius:999px; border:1.5px solid var(--border); background:var(--card-bg-alt); font-family:var(--font); font-size:12px; font-weight:600; color:var(--text); cursor:pointer; outline:none; transition:border-color var(--t),box-shadow var(--t); appearance:none; -webkit-appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2364748B'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 9px center; }
+    .status-select:hover { border-color:#475569; }
+    .status-select:focus { box-shadow:0 0 0 3px var(--primary-glow); border-color:var(--primary); }
+    .status-select.status-new       { border-color:rgba(59,130,246,.45); background-color:rgba(59,130,246,.1); color:#60A5FA; }
+    .status-select.status-contacted { border-color:rgba(245,158,11,.45); background-color:var(--amber-dim); color:var(--amber); }
+    .status-select.status-converted { border-color:rgba(34,197,94,.45);  background-color:var(--green-dim); color:var(--green); }
+    .status-select option { background:var(--card-bg); color:var(--text); font-weight:500; }
+
+    /* NOTE INPUT */
+    .note-input { width:160px; padding:7px 10px; background:var(--bg); border:1.5px solid var(--border); border-radius:var(--radius-xs); font-family:var(--font); font-size:12.5px; color:var(--text); outline:none; transition:border-color var(--t),box-shadow var(--t); }
+    .note-input:hover { border-color:#475569; }
+    .note-input:focus { border-color:var(--primary); box-shadow:0 0 0 3px var(--primary-glow); }
+    .note-input::placeholder { color:var(--text-dim); }
+
+    /* DELETE */
+    .btn-delete { background:var(--red-dim); color:var(--red); border:1px solid rgba(239,68,68,.25); border-radius:var(--radius-xs); padding:6px 13px; font-family:var(--font); font-size:12px; font-weight:600; cursor:pointer; transition:background var(--t),border-color var(--t),transform var(--t); }
+    .btn-delete:hover { background:var(--red); color:#fff; border-color:var(--red); transform:scale(1.04); }
+
+    /* OVERLAY */
+    .sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(2px); z-index:99; }
+    .sidebar-overlay.show { display:block; }
+
+    /* RESPONSIVE */
+    @media (max-width:900px) {
+      .sidebar { transform:translateX(-100%); }
+      .sidebar.open { transform:translateX(0); }
+      .main { margin-left:0; padding:20px 16px; }
+      .hamburger { display:block; }
+      .form-grid { grid-template-columns:1fr 1fr; }
+      .btn-group { grid-column:span 2; }
+      .stats-row { grid-template-columns:1fr; }
+      .note-input { width:110px; }
+    }
+    @media (max-width:580px) {
+      .form-grid { grid-template-columns:1fr; }
+      .btn-group { grid-column:span 1; }
+      .topbar-right { display:none; }
+      .page-title { font-size:19px; }
+    }
+
+    @keyframes fadeSlideIn { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes spin { to{transform:rotate(360deg)} }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <span class="brand-icon">◈</span>
+      <span class="brand-name">LeadFlow</span>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="#" class="nav-item active"><span class="nav-icon">⬡</span> Dashboard</a>
+      <a href="#" class="nav-item"><span class="nav-icon">◎</span> Leads</a>
+      <a href="#" class="nav-item"><span class="nav-icon">◷</span> Activity</a>
+      <a href="#" class="nav-item"><span class="nav-icon">◈</span> Settings</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-avatar">A</div>
+      <div class="user-info">
+        <div class="user-name">Admin User</div>
+        <div class="user-role">CRM Manager</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="hamburger" id="hamburgerBtn">☰</button>
+        <div>
+          <h1 class="page-title">Lead Dashboard</h1>
+          <p class="page-sub">Track, manage and convert your leads</p>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <div class="stat-pill">
+          <span class="pill-label">Total</span>
+          <span class="pill-value" id="totalCount">0</span>
+        </div>
+        <div class="stat-pill converted">
+          <span class="pill-label">Converted</span>
+          <span class="pill-value" id="convertedCount">0</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Connection status banner -->
+    <div class="conn-banner" id="connBanner">
+      <span class="conn-dot"></span>
+      <span id="connMsg"></span>
+    </div>
+
+    <section class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">New</div>
+        <div class="stat-number" id="countNew">0</div>
+        <div class="stat-bar"><div class="stat-fill new-fill" id="barNew"></div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Contacted</div>
+        <div class="stat-number" id="countContacted">0</div>
+        <div class="stat-bar"><div class="stat-fill contacted-fill" id="barContacted"></div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Converted</div>
+        <div class="stat-number" id="countConverted">0</div>
+        <div class="stat-bar"><div class="stat-fill converted-fill" id="barConverted"></div></div>
+      </div>
+    </section>
+
+    <section class="card form-card">
+      <div class="card-header">
+        <h2 class="card-title">Add New Lead</h2>
+        <span class="card-badge">+ New</span>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="leadName">Full Name</label>
+          <input type="text" id="leadName" placeholder="e.g. Priya Sharma" />
+        </div>
+        <div class="form-group">
+          <label for="leadEmail">Email Address</label>
+          <input type="email" id="leadEmail" placeholder="e.g. priya@email.com" />
+        </div>
+        <div class="form-group">
+          <label for="leadSource">Lead Source</label>
+          <input type="text" id="leadSource" placeholder="e.g. LinkedIn, Referral" />
+        </div>
+        <div class="form-group btn-group">
+          <button class="btn-add" onclick="addLead()">Add Lead</button>
+        </div>
+      </div>
+      <p class="form-error" id="formError"></p>
+    </section>
+
+    <div class="search-wrap">
+      <input type="text" id="searchInput" placeholder="🔍  Search leads by name, email or source..." oninput="displayLeads()" />
+    </div>
+
+    <section class="card table-card">
+      <div class="card-header">
+        <h2 class="card-title">All Leads</h2>
+        <span class="lead-count-badge" id="leadCountBadge">0 leads</span>
+      </div>
+
+      <div class="loading-state" id="loadingState">
+        <div class="spinner"></div>
+        <p>Connecting to database…</p>
+      </div>
+
+      <div class="empty-state" id="emptyState" style="display:none;">
+        <div class="empty-icon">◎</div>
+        <h3>No leads yet</h3>
+        <p>Add your first lead using the form above to get started.</p>
+      </div>
+
+      <div class="table-wrap" id="tableWrap" style="display:none;">
+        <table class="leads-table">
+          <thead>
+            <tr>
+              <th>#</th><th>Name</th><th>Email</th><th>Source</th><th>Status</th><th>Notes</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="leadsTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    /* =====================================================
+       LeadFlow — CRM Frontend
+       Talks to Flask backend at http://127.0.0.1:5000
+       ===================================================== */
+
+    // ⬇ Change this if Flask runs on a different port
+    const API_BASE = "http://127.0.0.1:5000/api";
+
+    let leads = [];
+
+    // ── Init ─────────────────────────────────────────────
+    document.addEventListener("DOMContentLoaded", () => {
+      fetchLeads();
+      setupSidebar();
+      ["leadName","leadEmail","leadSource"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener("keydown", e => { if (e.key === "Enter") addLead(); });
+      });
+    });
+
+    // ── API helper ───────────────────────────────────────
+    async function apiFetch(path, opts = {}) {
+      const res  = await fetch(API_BASE + path, { headers:{"Content-Type":"application/json"}, ...opts });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Request failed");
+      return data;
+    }
+
+    // ── fetchLeads() ─────────────────────────────────────
+    async function fetchLeads() {
+      showLoading(true);
+      try {
+        leads = await apiFetch("/leads");
+        showBanner("ok", "✓ Connected to Flask + SQLite backend");
+        setTimeout(hideBanner, 3000);
+        displayLeads();
+      } catch (err) {
+        showLoading(false);
+        document.getElementById("emptyState").style.display = "flex";
+        document.getElementById("tableWrap").style.display  = "none";
+        showBanner("error",
+          "⚠ Cannot reach Flask backend at " + API_BASE +
+          ". Run: python app.py  (make sure Flask is running)"
+        );
+      }
+    }
+
+    // ── addLead() ────────────────────────────────────────
+    async function addLead() {
+      const ni = document.getElementById("leadName");
+      const ei = document.getElementById("leadEmail");
+      const si = document.getElementById("leadSource");
+      const name = ni.value.trim(), email = ei.value.trim(), source = si.value.trim();
+
+      if (!name || !email || !source) { showError("Please fill in all fields."); return; }
+      if (!isValidEmail(email))       { showError("Please enter a valid email address."); return; }
+      clearError();
+
+      try {
+        const lead = await apiFetch("/leads", { method:"POST", body:JSON.stringify({name,email,source}) });
+        leads.unshift(lead);
+        displayLeads();
+        ni.value = ei.value = si.value = "";
+        ni.focus();
+      } catch(err) { showError(err.message); }
+    }
+
+    // ── displayLeads() ───────────────────────────────────
+    function displayLeads() {
+      const tbody  = document.getElementById("leadsTableBody");
+      const empty  = document.getElementById("emptyState");
+      const table  = document.getElementById("tableWrap");
+      const query  = (document.getElementById("searchInput")?.value || "").toLowerCase();
+
+      showLoading(false);
+
+      const f = leads.filter(l =>
+        l.name.toLowerCase().includes(query) ||
+        l.email.toLowerCase().includes(query) ||
+        l.source.toLowerCase().includes(query)
+      );
+
+      updateStats();
+      document.getElementById("leadCountBadge").textContent = `${f.length} lead${f.length!==1?"s":""}`;
+
+      if (f.length === 0) { empty.style.display="flex"; table.style.display="none"; tbody.innerHTML=""; return; }
+      empty.style.display = "none";
+      table.style.display = "block";
+
+      tbody.innerHTML = f.map((lead,i) => `
+        <tr data-id="${lead.id}">
+          <td><span class="row-num">${i+1}</span></td>
+          <td>
+            <div class="lead-name-cell">
+              <div class="lead-avatar">${initials(lead.name)}</div>
+              <div>
+                <div class="lead-name">${esc(lead.name)}</div>
+                <div class="lead-email-sub">${esc(lead.email)}</div>
+              </div>
+            </div>
+          </td>
+          <td>${esc(lead.email)}</td>
+          <td><span class="source-badge">${esc(lead.source)}</span></td>
+          <td>
+            <select class="status-select ${sClass(lead.status)}" onchange="updateStatus(${lead.id},this.value)">
+              <option value="New"       ${lead.status==="New"?"selected":""}>🔵 New</option>
+              <option value="Contacted" ${lead.status==="Contacted"?"selected":""}>🟡 Contacted</option>
+              <option value="Converted" ${lead.status==="Converted"?"selected":""}>🟢 Converted</option>
+            </select>
+          </td>
+          <td>
+            <input type="text" class="note-input" placeholder="Add note…"
+                   value="${esc(lead.note||"")}"
+                   onblur="addNote(${lead.id},this.value)"
+                   onkeydown="if(event.key==='Enter')this.blur()" />
+          </td>
+          <td><button class="btn-delete" onclick="deleteLead(${lead.id})">Delete</button></td>
+        </tr>`).join("");
+    }
+
+    // ── updateStatus() ───────────────────────────────────
+    async function updateStatus(id, status) {
+      try {
+        const updated = await apiFetch(`/leads/${id}`,{method:"PATCH",body:JSON.stringify({status})});
+        const i = leads.findIndex(l=>l.id===id); if(i!==-1) leads[i]=updated;
+        displayLeads();
+      } catch(err) { showError("Status update failed: "+err.message); }
+    }
+
+    // ── addNote() ────────────────────────────────────────
+    async function addNote(id, note) {
+      try {
+        const updated = await apiFetch(`/leads/${id}`,{method:"PATCH",body:JSON.stringify({note:note.trim()})});
+        const i = leads.findIndex(l=>l.id===id); if(i!==-1) leads[i]=updated;
+        updateStats();
+      } catch(err) { showError("Note save failed: "+err.message); }
+    }
+
+    // ── deleteLead() ─────────────────────────────────────
+    async function deleteLead(id) {
+      try {
+        await apiFetch(`/leads/${id}`,{method:"DELETE"});
+        leads = leads.filter(l=>l.id!==id);
+        displayLeads();
+      } catch(err) { showError("Delete failed: "+err.message); }
+    }
+
+    // ── updateStats() ────────────────────────────────────
+    function updateStats() {
+      const total = leads.length;
+      const nNew  = leads.filter(l=>l.status==="New").length;
+      const nCon  = leads.filter(l=>l.status==="Contacted").length;
+      const nConv = leads.filter(l=>l.status==="Converted").length;
+      document.getElementById("totalCount").textContent     = total;
+      document.getElementById("convertedCount").textContent = nConv;
+      document.getElementById("countNew").textContent       = nNew;
+      document.getElementById("countContacted").textContent = nCon;
+      document.getElementById("countConverted").textContent = nConv;
+      const p = n => total===0?"0%":Math.round(n/total*100)+"%";
+      document.getElementById("barNew").style.width       = p(nNew);
+      document.getElementById("barContacted").style.width = p(nCon);
+      document.getElementById("barConverted").style.width = p(nConv);
+    }
+
+    // ── Sidebar ──────────────────────────────────────────
+    function setupSidebar() {
+      const sidebar = document.querySelector(".sidebar");
+      const btn     = document.getElementById("hamburgerBtn");
+      const overlay = document.createElement("div");
+      overlay.className = "sidebar-overlay";
+      document.body.appendChild(overlay);
+      btn.addEventListener("click",()=>{ sidebar.classList.toggle("open"); overlay.classList.toggle("show"); });
+      overlay.addEventListener("click",()=>{ sidebar.classList.remove("open"); overlay.classList.remove("show"); });
+    }
+
+    // ── UI Helpers ───────────────────────────────────────
+    function showLoading(v) { document.getElementById("loadingState").style.display = v?"flex":"none"; }
+
+    function showBanner(type, msg) {
+      const b = document.getElementById("connBanner");
+      const m = document.getElementById("connMsg");
+      b.className = "conn-banner "+type;
+      m.textContent = msg;
+    }
+    function hideBanner() { document.getElementById("connBanner").className="conn-banner"; }
+
+    function showError(msg) {
+      const el = document.getElementById("formError");
+      el.textContent = msg;
+      clearTimeout(el._t);
+      el._t = setTimeout(()=>{ el.textContent=""; }, 5000);
+    }
+    function clearError() { document.getElementById("formError").textContent=""; }
+
+    function isValidEmail(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
+    function initials(n) { return n.trim().split(/\s+/).map(w=>w[0]).join("").slice(0,2).toUpperCase(); }
+    function sClass(s) { return {New:"status-new",Contacted:"status-contacted",Converted:"status-converted"}[s]||"status-new"; }
+    function esc(str) { const d=document.createElement("div"); d.textContent=str; return d.innerHTML; }
+  </script>
+</body>
+</html>
